@@ -94,8 +94,20 @@ func main() {
 	}
 
 	id := os.Args[1]
-	if id[0] != '@' || strings.Split(id[1:], ".")[1] != "ed25519" {
+	if id[0] != '@' && id[0] != '%' {
 		fmt.Println("error: that does not look like an id.")
+		return
+	}
+
+	idSplit := strings.Split(id[1:], ".")
+
+	if len(idSplit) != 2 {
+		fmt.Println("error: that does not look like an id.", len(idSplit))
+		return
+	}
+	if idSplit[1] != "ed25519" && idSplit[1] != "sha256" {
+
+		fmt.Println("error: that does not look like an id.", idSplit[1])
 		return
 	}
 
@@ -103,12 +115,13 @@ func main() {
 
 	key, err := base64.StdEncoding.DecodeString(b64Key)
 	if err != nil {
-		fmt.Println("error parsing public key:", err)
+		fmt.Println("error parsing id:", err)
 		return
 	}
 
 	g := Grid{}
-	f, err := os.Create(id + ".png")
+	// replace slashes, they are not allowed in filesystem context
+	f, err := os.Create(strings.Replace(id, "/", "|", -1) + ".png")
 	if err != nil {
 		panic(err)
 	}
