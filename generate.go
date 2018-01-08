@@ -1,13 +1,13 @@
-package main
+package hexagen
 
 import (
 	"encoding/base64"
 	"fmt"
-	"image/png"
-	"os"
-	"strings"
-	//"log"
+	"image/color"
 	"math"
+	"strings"
+
+	"cryptoscope.co/go/errors"
 )
 
 func adjacent(a, b FaceAddr) bool {
@@ -85,46 +85,31 @@ func inhexagon(addr FaceAddr) bool {
 	return acc
 }
 
-var width float64 = 2048
-
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s <id>\n", os.Args[0])
-		return
-	}
-
-	id := os.Args[1]
+func Generate(id string, width float64) (*Grid, error) {
 	if id[0] != '@' && id[0] != '%' {
-		fmt.Println("error: that does not look like an id.")
-		return
+		return nil, errors.New("hexagen: that does not look like an id")
 	}
 
 	idSplit := strings.Split(id[1:], ".")
 
 	if len(idSplit) != 2 {
-		fmt.Println("error: that does not look like an id.", len(idSplit))
-		return
+		return nil, fmt.Errorf("hexagen: that does not look like an id. %v", idSplit)
 	}
-	if idSplit[1] != "ed25519" && idSplit[1] != "sha256" {
 
-		fmt.Println("error: that does not look like an id.", idSplit[1])
-		return
+	if idSplit[1] != "ed25519" && idSplit[1] != "sha256" {
+		return nil, fmt.Errorf("hexagen: that does not look like an id.", idSplit[1])
 	}
 
 	b64Key := strings.Split(id[1:], ".")[0]
 
 	key, err := base64.StdEncoding.DecodeString(b64Key)
 	if err != nil {
-		fmt.Println("error parsing id:", err)
-		return
+		return nil, errors.Wrapf(err, "hexagen: b64 decode failed")
 	}
 
-	g := Grid{}
-	// replace slashes, they are not allowed in filesystem context
-	f, err := os.Create(strings.Replace(id, "/", "|", -1) + ".png")
-	if err != nil {
-		panic(err)
-	}
+	var g Grid
+	g.m = make(map[FaceAddr]color.CMYK, 0)
+	g.w = width
 
 	cur := FaceAddr{2, 0, true}
 	prev := FaceAddr{2, -1, false}
@@ -145,7 +130,7 @@ func main() {
 
 			cur = wrap(cur)
 
-			col := g[cur]
+			col := g.m[cur]
 			//col.A = 0xff
 
 			col.C += b & 1
@@ -157,14 +142,13 @@ func main() {
 			col.Y += b & 1
 			b >>= 1
 
-			g[cur] = col
+			g.m[cur] = col
 		}
 	}
 
 	var max float64
 
-	for _, col := range g {
-		//fmt.Println(addr, col)
+	for _, col := range g.m {
 		max = math.Max(
 			math.Max(float64(col.C), float64(col.M)),
 			math.Max(float64(col.Y), float64(max)),
@@ -173,20 +157,13 @@ func main() {
 
 	scale := byte(0xff / max)
 
-	fmt.Println(max, scale)
-
-	for addr, col := range g {
+	for addr, col := range g.m {
 		col.C *= scale
 		col.M *= scale
 		col.Y *= scale
 
-		g[addr] = col
+		g.m[addr] = col
 	}
 
-	err = png.Encode(f, g)
-	if err != nil {
-		panic(err)
-	}
-
-	f.Close()
+	return &g, nil
 }

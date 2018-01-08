@@ -1,4 +1,4 @@
-package main
+package hexagen
 
 import (
 	"fmt"
@@ -35,25 +35,28 @@ func (addr FaceAddr) String() string {
 	return fmt.Sprintf("{% 1d, % 1d, %v}", addr.X, addr.Y, addr.Orientation)
 }
 
-type Grid map[FaceAddr]color.CMYK
+type Grid struct {
+	m map[FaceAddr]color.CMYK
+	w float64
+}
 
 func (g Grid) At(x, y int) color.Color {
-	height := width * math.Sqrt(3) / 2
-	padding := int(width-height) / 2
+	height := g.w * math.Sqrt(3) / 2
+	padding := int(g.w-height) / 2
 
 	y -= padding
-	if y < 0 || y > int(float64(width)*math.Sqrt(3)/2) {
+	if y < 0 || y > int(float64(g.w)*math.Sqrt(3)/2) {
 		return color.Transparent
 	}
 
-	y = int(float64(width)/2*math.Sqrt(3)) - y
-	addr := resolve(float64(x)/width, float64(y)/width)
+	y = int(float64(g.w)/2*math.Sqrt(3)) - y
+	addr := resolve(float64(x)/g.w, float64(y)/g.w)
 
 	if !inhexagon(addr) {
 		return color.Transparent
 	}
 
-	if col, ok := g[addr]; ok {
+	if col, ok := g.m[addr]; ok {
 		return col
 	}
 
@@ -65,5 +68,5 @@ func (g Grid) ColorModel() color.Model {
 }
 
 func (g Grid) Bounds() image.Rectangle {
-	return image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: int(width), Y: int(width)}}
+	return image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: int(g.w), Y: int(g.w)}}
 }

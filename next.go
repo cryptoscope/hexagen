@@ -1,4 +1,4 @@
-package main
+package hexagen
 
 import (
 	"log"
