@@ -1,4 +1,4 @@
-package hexagen
+package hexagen // import "cryptoscope.co/go/hexagen"
 
 import (
 	"encoding/base64"
@@ -7,7 +7,7 @@ import (
 	"math"
 	"strings"
 
-	"cryptoscope.co/go/errors"
+	"github.com/pkg/errors"
 )
 
 func adjacent(a, b FaceAddr) bool {
