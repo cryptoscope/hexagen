@@ -1,4 +1,4 @@
-package hexagen // import "cryptoscope.co/go/hexagen"
+package hexagen // import "go.cryptoscope.co/hexagen"
 
 import (
 	"encoding/base64"

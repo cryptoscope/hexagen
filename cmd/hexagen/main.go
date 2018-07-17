@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"cryptoscope.co/go/hexagen"
+	"go.cryptoscope.co/hexagen"
 )
 
 func main() {
