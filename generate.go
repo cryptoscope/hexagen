@@ -97,7 +97,7 @@ func Generate(id string, width float64) (*Grid, error) {
 	}
 
 	if idSplit[1] != "ed25519" && idSplit[1] != "sha256" {
-		return nil, fmt.Errorf("hexagen: that does not look like an id.", idSplit[1])
+		return nil, fmt.Errorf("hexagen: that (%s) does not look like an id.", idSplit[1])
 	}
 
 	b64Key := strings.Split(id[1:], ".")[0]
