@@ -1,13 +1,12 @@
-package hexagen // import "go.cryptoscope.co/hexagen"
+package hexagen
 
 import (
-	"encoding/base64"
 	"fmt"
 	"image/color"
 	"math"
-	"strings"
 
 	"github.com/pkg/errors"
+	"go.cryptoscope.co/ssb"
 )
 
 func adjacent(a, b FaceAddr) bool {
@@ -86,25 +85,20 @@ func inhexagon(addr FaceAddr) bool {
 }
 
 func Generate(id string, width float64) (*Grid, error) {
-	if id[0] != '@' && id[0] != '%' {
-		return nil, errors.New("hexagen: that does not look like an id")
-	}
-
-	idSplit := strings.Split(id[1:], ".")
-
-	if len(idSplit) != 2 {
-		return nil, errors.Errorf("hexagen: %q does not look like an id.", idSplit)
-	}
-
-	if idSplit[1] != "ed25519" && idSplit[1] != "sha256" {
-		return nil, errors.Errorf("hexagen: %q is no known suffix", idSplit[1])
-	}
-
-	b64Key := strings.Split(id[1:], ".")[0]
-
-	key, err := base64.StdEncoding.DecodeString(b64Key)
+	ref, err := ssb.ParseRef(id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "hexagen: b64 decode failed")
+		return nil, errors.Wrap(err, "hexagen: that does not look like an id")
+	}
+
+	var key []byte
+
+	switch rt := ref.(type) {
+	case *ssb.FeedRef:
+		key = rt.PubKey()
+	case *ssb.BlobRef:
+		key = rt.Hash
+	default:
+		return nil, errors.Errorf("hexagen: invalid ref type %T", ref)
 	}
 
 	var g Grid
