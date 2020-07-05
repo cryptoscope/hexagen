@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"math"
-
-	"github.com/pkg/errors"
-	"go.cryptoscope.co/ssb"
 )
 
 func adjacent(a, b FaceAddr) bool {
@@ -43,8 +40,8 @@ func (v vec) add(w vec) vec {
 	return vec{v.x + w.x, v.y + w.y}
 }
 
-func (fp vec) String() string {
-	return fmt.Sprintf("{% 1.1f, % 1.1f}", fp.x, fp.y)
+func (v vec) String() string {
+	return fmt.Sprintf("{% 1.1f, % 1.1f}", v.x, v.y)
 }
 
 func resolve(x, y float64) FaceAddr {
@@ -84,23 +81,8 @@ func inhexagon(addr FaceAddr) bool {
 	return acc
 }
 
-func Generate(id string, width float64) (*Grid, error) {
-	ref, err := ssb.ParseRef(id)
-	if err != nil {
-		return nil, errors.Wrap(err, "hexagen: that does not look like an id")
-	}
-
-	var key []byte
-
-	switch rt := ref.(type) {
-	case *ssb.FeedRef:
-		key = rt.PubKey()
-	case *ssb.BlobRef:
-		key = rt.Hash
-	default:
-		return nil, errors.Errorf("hexagen: invalid ref type %T", ref)
-	}
-
+// Generate takes some data and a (pixel) width and generates a Grid that can be encoded into an image.
+func Generate(data []byte, width float64) *Grid {
 	var g Grid
 	g.m = make(map[FaceAddr]color.CMYK, 0)
 	g.w = width
@@ -109,7 +91,7 @@ func Generate(id string, width float64) (*Grid, error) {
 	prev := FaceAddr{2, -1, false}
 	delta := cur.Sub(prev)
 
-	for _, b := range key {
+	for _, b := range data {
 
 		for j := 0; j < 2; j++ {
 			//fmt.Println(cur)
@@ -159,5 +141,5 @@ func Generate(id string, width float64) (*Grid, error) {
 		g.m[addr] = col
 	}
 
-	return &g, nil
+	return &g
 }
